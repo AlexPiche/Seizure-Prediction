@@ -31,6 +31,7 @@ import pandas as pd
 from sklearn.cross_validation import train_test_split
 
 import numpy
+import numpy as np
 
 import theano
 import theano.tensor as T
@@ -40,7 +41,6 @@ from theano.tensor.nnet import conv
 from logistic_sgd import LogisticRegression, load_data
 from mlp import HiddenLayer
 
-theano.config.compute_test_value = 'warn'
 
 def shared_dataset(data_xy, borrow=True):
     """ Function that loads the dataset into shared variables
@@ -145,7 +145,7 @@ class LeNetConvPoolLayer(object):
         self.input = input
 
 
-def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
+def evaluate_lenet5(learning_rate=0.1, n_epochs=250,
                     dataset='mnist.pkl.gz',
                     nkerns=[20, 50], batch_size=500):
     """ Demonstrates lenet on MNIST dataset
@@ -170,19 +170,26 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     train_set_x = pd.read_csv("data/train_inputs.csv", index_col = 0)
     train_set_y = pd.read_csv("data/train_outputs.csv", index_col = 0)
 
-    train_set_x, test_set_x, train_set_y, test_set_y = train_test_split(train_set_x, train_set_y, test_size=0.33, random_state=42)
+    train_set_rotated_x = pd.read_csv("data/rotatedInputs.csv", index_col = 0)
+    train_set_rotated_y = pd.read_csv("data/rotatedOutputs.csv", index_col = 0)
+    train_set_rotated_x = train_set_rotated_x.drop('dim_2304', 1)
+    train_set_x = pd.concat([train_set_x, train_set_rotated_x])
+    train_set_y = pd.concat([train_set_y, train_set_rotated_y])
 
-    valid_set_x, test_set_x, valid_set_y, test_set_y = train_test_split(test_set_x, test_set_y, test_size=0.33, random_state=42)
+    train_set_x, valid_set_x, train_set_y, valid_set_y = train_test_split(train_set_x, train_set_y, test_size=0.33, random_state=42)
 
+    test_set_x = pd.read_csv("data/test_inputs.csv", index_col = 0)
+    #test_set_y = pd.read_csv("data/test_output_random.csv", index_col = 0)
+    test_set_x = test_set_x.drop('dim_2304', 1)
     train_set_x = theano.shared(train_set_x.as_matrix())
     train_set_y = train_set_y.as_matrix()
     train_set_y = train_set_y.reshape(train_set_y.shape[0],)
     train_set_y = T.cast(theano.shared(train_set_y), "int32")
 
     test_set_x = theano.shared(test_set_x.as_matrix())
-    test_set_y = test_set_y.as_matrix()
-    test_set_y = test_set_y.reshape(test_set_y.shape[0],)
-    test_set_y = T.cast(theano.shared(test_set_y), "int32")
+    #test_set_y = test_set_y.as_matrix()
+    #test_set_y = test_set_y.reshape(test_set_y.shape[0],)
+    #test_set_y = T.cast(theano.shared(test_set_y), "int32")
 
     valid_set_x = theano.shared(valid_set_x.as_matrix())
     valid_set_y = valid_set_y.as_matrix()
@@ -263,12 +270,14 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     # create a function to compute the mistakes that are made by the model
     test_model = theano.function(
         [index],
-        layer3.errors(y),
+        layer3.y_pred,
         givens={
             x: test_set_x[index * batch_size: (index + 1) * batch_size],
-            y: test_set_y[index * batch_size: (index + 1) * batch_size]
         }
     )
+    #model_predict = theano.function([index], layer3.y_pred,
+                                    #givens={
+                                        #x: test_set_x[index * batch_size: (index + 1) * batch_size]})
 
     validate_model = theano.function(
         [index],
@@ -362,22 +371,29 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
                     best_validation_loss = this_validation_loss
                     best_iter = iter
 
-                    # test it on the test set
-                    test_losses = [
-                        test_model(i)
-                        for i in xrange(n_test_batches)
-                    ]
-                    test_score = numpy.mean(test_losses)
-                    print(('     epoch %i, minibatch %i/%i, test error of '
-                           'best model %f %%') %
-                          (epoch, minibatch_index + 1, n_train_batches,
-                           test_score * 100.))
+                    ## test it on the test set
+                    #test_losses = [
+                        #test_model(i)
+                        #for i in xrange(n_test_batches)
+                    #]
+                    #test_score = numpy.mean(test_losses)
+                    #print(('     epoch %i, minibatch %i/%i, test error of '
+                           #'best model %f %%') %
+                          #(epoch, minibatch_index + 1, n_train_batches,
+                           #test_score * 100.))
+
+
 
             if patience <= iter:
                 done_looping = True
                 break
 
     end_time = timeit.default_timer()
+    digit_preds = pd.Series(np.concatenate([test_model(i) for i in xrange(n_test_batches)]))
+    image_ids = pd.Series(np.arange(1, len(digit_preds) + 1))
+    submission = pd.DataFrame([image_ids, digit_preds]).T
+    submission.columns = ['ImageId', 'Label']
+    submission.to_csv('submission_sample.csv', index=False)
     print('Optimization complete.')
     print('Best validation score of %f %% obtained at iteration %i, '
           'with test performance %f %%' %
@@ -386,8 +402,11 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
 
+
+
 if __name__ == '__main__':
     evaluate_lenet5()
+    
 
 
 def experiment(state, channel):
