@@ -3,6 +3,8 @@
 ## Features and Background Information
 
 https://github.com/AlexPiche/Seizure-Prediction/blob/master/Articles/Howbert2014.pdf
+https://github.com/MichaelHills/seizure-prediction
+
 
 ### PCA and ICA 
 
@@ -31,6 +33,5 @@ https://github.com/AlexPiche/Seizure-Prediction/blob/master/Articles/Turner2014.
 
 ## Other Sources
 
-https://github.com/MichaelHills/seizure-prediction
 
 https://www.sharelatex.com/project/5650c66739c542e95bab4fd9
