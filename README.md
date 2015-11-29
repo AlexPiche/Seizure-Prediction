@@ -4,7 +4,9 @@
 
 * Implement naive learners such as SVM, Random Forest, etc so we'll be able to compare them with our crazy DL algo
 * document feature pre-processing
-* 
+* Implement RNN, CNN, and maybe DBN if we have the time
+* Prepare slides for Wednesday?
+* **Feel free to add or modify**
 
 ## Features and Background Information
 
