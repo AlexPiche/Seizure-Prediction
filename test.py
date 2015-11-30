@@ -1,47 +1,53 @@
-from load_data import load_subjects
+from load_data import load_subjects, load_subjects_test
 from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.svm import SVC
 from sklearn import cross_validation
+
+from Utilities import make_csv_predictions,train_predict
+
 import numpy as np
-patients = ['Dog_1','Dog_2','Dog_3','Dog_4','Dog_5','Patient_1']
 
-#you can load all the subjects you want by putting them in a list
-#the return value is a dictionary with the subjects as keys.
-all_subjects_dict = load_subjects(patients)
+all_patients = ['Dog_1','Dog_2','Dog_3','Dog_4','Dog_5','Patient_1','Patient_2']
 
-#pat dict is a dictionary that has the different preprocessing techniques as its keys 
+""" you can load all the subjects you want by putting them in a list
+	the return value is a dictionary with the subjects as keys """
+all_subjects_dict = load_subjects(all_patients)
+
+all_subjects_dict_test = load_subjects_test(all_patients)
+
+""" pat dict is a dictionary that has the different preprocessing techniques as its keys """
 pat1_dict = all_subjects_dict['Patient_1']
 
-#the different preprocessing techniques, michael hills created a classifier for each and then did an averag
+pat1_dict_test = all_subjects_dict_test['Patient_1']
+
+""" the different preprocessing techniques, michael hills created a classifier for each and then did an average """
 print pat1_dict.keys()
 
-#the data itself is separated by whether it was interictal or preictal
+"""	the data itself is separated by whether it was interictal or preictal """
 correlation_data_interictal, correlation_data_preictal = pat1_dict['corr']
 
-#classifiers = [LinearRegression(),LogisticRegression()]
+test_cor = pat1_dict_test['corr']
 
-#for classifier in classifiers:
-for patient in patients:
+""" Loop over all patients, 
+	make probabilistic predictions for each method within a given patient
+	combine the probalities by either:
+	1) just summing them up
+	2) subtracting the mean prediction probability from each class 
+	   for each method and then summing (Avoids all 0 predictions) """
+all_predictions = []
+for patient in all_patients:
 
-	cur_patient_data = all_subjects_dict[patient]
+	patient_data = all_subjects_dict[patient]
+	patient_data_test = all_subjects_dict_test[patient]
 
-	for method in cur_patient_data:
-		
-		i,p = cur_patient_data[method]
-		shape_i = i.shape
-		shape_p = p.shape
+	predictions = train_predict(patient_data,patient_data_test,LogisticRegression(),
+		flatten = True, enhance = True, subtract_mean = True)
 
-		#change the shape from (#of examples,#channels,#time) to (#examples,channels*time)
-		interictal = np.reshape(i,(shape_i[0],np.product(shape_i[1:])))
-		preictal = np.reshape(p,(shape_p[0],np.product(shape_p[1:])))
+	all_predictions.append(predictions)
 
-		X = np.vstack((interictal,preictal))
+""" takes in a list of lists of predictions and a list of patients, 
+	outputs a csv that can be submitted to kaggle """
+make_csv_predictions(all_predictions,all_patients)
 
-		ones = np.ones(preictal.shape[0])
-		zeros = np.zeros(interictal.shape[0])
-
-		y = np.append(zeros,ones)
-
-		scores = cross_validation.cross_val_score(LogisticRegression(),X,y,cv=5)
-
-		print patient,"log_reg",scores.mean()
+	
 

@@ -49,11 +49,13 @@ pib_spec_ents = [
 ]
 
 keys = ['corr','freq-corr-1-None','fft_mag_fbin-mean','hfd-2','hurst','pfd']
+suffix_fbin = '-0.5-2.25-4-5.5-7-9.5-12-21-30-39-48_log10_fch' 
+prefix = 'fft_mag_pib-spec-ent-'
 
 def load_subject_data(subject):
     subject_dict = {}
 
-    suffix_fbin = '-0.5-2.25-4-5.5-7-9.5-12-21-30-39-48_log10_fch' 
+    
     for key in keys:
         curkey = key
         if 'fbin' in key:
@@ -66,7 +68,7 @@ def load_subject_data(subject):
     
         subject_dict[key] = (interictal,preictal)
 
-    prefix = 'fft_mag_pib-spec-ent-'
+    
     for i in range(0,len(pib_spec_ents)):
         cur_setup = pib_spec_ents[i]
 
@@ -80,10 +82,42 @@ def load_subject_data(subject):
     
     return subject_dict
 
+def load_subject_data_test(subject):
+    subject_dict = {}
+
+    for key in keys:
+        curkey = key
+        if 'fbin' in key:
+            curkey = key+suffix_fbin
+
+        test_file = read('./preprocessed/' +subject+'/' + subject + '_test_pp_w-75s_' + curkey + '.hdf5')
+
+        test = test_file['X']
+        subject_dict[key] = test
+
+    for i in range(0,len(pib_spec_ents)):
+        cur_setup = pib_spec_ents[i]
+
+        test_file   = read('./preprocessed/' +subject+'/' + subject + '_test_pp_w-75s_' + prefix+cur_setup + '.hdf5')
+
+        test = test_file['X']
+
+        subject_dict[prefix+str(i)] = test
+
+    return subject_dict
+
 def load_subjects(subject_list):
     all_subjects = {}
 
     for subject in subject_list:
         all_subjects[subject] = load_subject_data(subject)
+
+    return all_subjects
+
+def load_subjects_test(subject_list):
+    all_subjects = {}
+
+    for subject in subject_list:
+        all_subjects[subject] = load_subject_data_test(subject)
 
     return all_subjects
