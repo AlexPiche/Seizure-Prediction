@@ -36,7 +36,7 @@ def make_csv_predictions(all_predictions,all_patients):
 	done = False
 	while not done:
 		try:
-			filename = 'submission.csv.gz'+str(id)
+			filename = 'submission'+str(id)+'.csv.gz'
 			guesses = '\n'.join(all_predictions_string)
 			fd = os.open(filename, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0644)
 			os.close(fd)
