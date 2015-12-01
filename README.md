@@ -3,6 +3,7 @@
 # TODO
 
 * Implement naive learners such as SVM, Random Forest, etc so we'll be able to compare them with our crazy DL algo
+* Implement One CLass SVM
 * document feature pre-processing
 * Implement RNN, CNN, and maybe DBN if we have the time
 * Prepare slides for Wednesday?
