@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 # Our LSTM will have 10 hidden/cell units
 N_HIDDEN = 10
-N_FEATURES_DIM = 150
+N_FEATURES_DIM = X.shape[2]
 
 
 l_in = lasagne.layers.InputLayer(shape=(None, None, N_FEATURES_DIM))
