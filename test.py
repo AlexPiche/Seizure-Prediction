@@ -46,18 +46,19 @@ for patient in all_patients:
 	patient_data = all_subjects_dict_cnn[patient]
 	patient_data_test = all_subjects_dict_test_cnn[patient]
 
+	"set best methods to be the number of preprocessing methods you want to use."
 	methods,scores,predictions = train_predict_test(patient_data,patient_data_test,CNN(),
-		flatten = False, enhance_size = 500, subtract_mean = True,best_methods=0,probability=True,cnn=True)
+		flatten = False, enhance_size = 500, subtract_mean = True,best_methods=0,probability=True,cnn=False)
 	
 
-	#best_methods.extend(methods)
-	#best_scores.extend(scores)
+	best_methods.extend(methods)
+	best_scores.extend(scores)
 	all_predictions.append(predictions)
 
 """ takes in a list of lists of predictions and a list of patients, 
 	outputs a csv that can be submitted to kaggle """
 make_csv_predictions(all_predictions,all_patients)
-# for bm,bs in zip(best_methods,best_scores):
-# 	print bm,bs
+for bm,bs in zip(best_methods,best_scores):
+ 	print bm,bs
 	
 
