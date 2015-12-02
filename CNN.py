@@ -26,7 +26,8 @@ def float32(k):
 def formatData(X, y = None):
         #X -= X.mean()
         #X /= X.std()
-        X = X.reshape(X.shape[0],1,X.shape[1],X.shape[2])
+        #print X.shape
+        X = X.reshape(X.shape[0],1,X.shape[1]*X.shape[2],X.shape[3])
         X = X.astype(np.float32)
         if y is not None:
             y = y.astype(np.int32)
@@ -35,14 +36,14 @@ def formatData(X, y = None):
 
 class CNN:
     def __init__(self):
-        self.convnet = None
+        self.convnet = NeuralNet(layers=[])
 
     def make_cnn(self,X,y):
-        FSIZE = (int(np.floor(X.shape[2]/4)), int(np.floor(X.shape[3]/4)))
-        #FSIZE = (2,8)
-        NUM_FILTERS1 = 8
-        NUM_FILTERS2 = 16
-        FSIZE1 = (X.shape[2], 1)
+        #FSIZE = (int(np.floor(X.shape[2]/4)), int(np.floor(X.shape[3]/4)))
+        FSIZE = (X.shape[2],1)
+        NUM_FILTERS1 = 64
+        NUM_FILTERS2 = 128
+        FSIZE1 = (1, 2)
         FSIZE2 = (1, X.shape[3])
         
         convnet = NeuralNet(
@@ -67,14 +68,14 @@ class CNN:
                 (DenseLayer, {'num_units': 2, 'nonlinearity': softmax}),
             ],
             
-            input_shape= (None, 1, X.shape[2],X.shape[3]),
+            input_shape= (None, X.shape[1], X.shape[2],X.shape[3]),
             
             conv1_num_filters = NUM_FILTERS1,
             conv1_filter_size = FSIZE , 
             conv1_pad =  1,
 
             conv2_num_filters = NUM_FILTERS2,
-            conv2_filter_size = FSIZE , 
+            conv2_filter_size = FSIZE1 , 
             conv2_pad =  1,
 
             g1_incoming = 'conv2',
@@ -99,7 +100,7 @@ class CNN:
 
     def fit(self,X,y):
         X,y = formatData(X,y)
-        print X.shape
+        #print X.shape
         self.convnet = self.make_cnn(X,y)
         self.convnet.fit(X,y)
 
@@ -110,3 +111,6 @@ class CNN:
     def predict(self,X):
         X,_ = formatData(X)
         return self.convnet.predict(X)
+
+    def get_params(self,deep):
+        return self.convnet.get_params()
