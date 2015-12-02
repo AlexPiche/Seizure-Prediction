@@ -1,7 +1,6 @@
 import pdb
 import lasagne
 from lasagne.layers import *
-from lasagne.layers.recurrent import *
 from lasagne.nonlinearities import tanh
 from lasagne.updates import adam
 from lasagne.layers import get_all_params
@@ -53,15 +52,14 @@ class RNN:
             recnet = NeuralNet(
                     layers = [
                             ('input', InputLayer ),
-                            ('lstm_forward', LSTMLayer),
-                            ('lstm_backward', LSTMLayer, {'backwards': True}),
-                            ('concat', ConcatLayer),
+                            ('lstm_forward', lasagne.layers.LSTMLayer),
+                            ('lstm_backward', lasagne.layers.LSTMLayer),
                             ('lstm_sum', ElemwiseSumLayer),
-                            (ReshapeLayer, {"shape": (-1, N_HIDDEN)}),
+                            ('reshape', ReshapeLayer),
                             (DenseLayer, {'num_units': 1, 'nonlinearity': tanh}),
                     ],
 
-                    input_shape= (None, None, X.shape[2]),
+                    input_shape= (None, 1, X.shape[1], X.shape[2]),
 
                     # LSTM parameters
                     lstm_forward_incoming = 'input',
@@ -75,16 +73,16 @@ class RNN:
                     lstm_backward_incoming = 'input',
                     lstm_backward_num_units = N_HIDDEN,
                     lstm_backward_ingate=gate_parameters,
-                    lstm_backward_backgetgate=gate_parameters,
+                    lstm_backward_forgetgate=gate_parameters,
                     lstm_backward_cell=cell_parameters,
                     lstm_backward_outgate=gate_parameters,
                     lstm_backward_learn_init=True,
                     lstm_backward_grad_clipping=100.0,
-                    #lstm_backward_backwards=True,
+                    lstm_backward_backwards=True,
 
-                    concat_incomings = ['lstm_forward', 'lstm_backward'],
-                    lstm_sum_incoming = 'concat',
-
+                    lstm_sum_incomings = ['lstm_forward', 'lstm_backward'],
+                    reshape_incoming = 'lstm_sum',
+                    reshape_shape = (-1, N_HIDDEN),
                     update_learning_rate=theano.shared(float32(0.01)),
                     update_momentum=theano.shared(float32(0.9)),
                     verbose=2,
