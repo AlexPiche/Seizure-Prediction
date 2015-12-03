@@ -9,7 +9,6 @@ import numpy as np
 
 from CNN import CNN
 from RNN import RNN
-from RNN3 import LSTM, GRU
 
 print("Getting the data")
 all_patients = ['Dog_1','Dog_2','Dog_3','Dog_4','Dog_5','Patient_1','Patient_2']
@@ -50,7 +49,7 @@ for patient in all_patients:
 	patient_data_test = all_subjects_dict_test[patient]
 
 	"set best methods to be the number of preprocessing methods you want to use."
-	methods,scores,predictions = train_predict_test(patient_data,patient_data_test, GRU(),
+	methods,scores,predictions = train_predict_test(patient_data,patient_data_test, RNN(),
 		                                            flatten = False, enhance_size = 500, subtract_mean = True,best_methods=0,probability=False,cnn=False)
 	
 
