@@ -18,7 +18,7 @@ mask = T.matrix('mask')
 class RNN:
     def __init__(self):
         self.rnn = None
-    def make_rnn(self, X, y, N_HIDDEN = 50, flavour = 'gru', operation = T.add):
+    def make_rnn(self, X, y, N_HIDDEN = 50, flavour = 'lstm', operation = T.add):
         """
         Build a RNN
 
@@ -113,7 +113,6 @@ class RNN:
 
     def fit(self, X, y, NUM_EPOCHS=10, EPOCH_SIZE=100):
         self.rnn = self.make_rnn(X, y)
-        print "Training"
         train_set_x, valid_set_x, train_set_y, valid_set_y = train_test_split(X, y, test_size=0.1, random_state=42)
         # lasagne.layers.get_output produces an expression for the output of the net
         network_output = lasagne.layers.get_output(self.rnn['out'])
@@ -139,8 +138,8 @@ class RNN:
         for epoch in range(NUM_EPOCHS):
             for _ in range(EPOCH_SIZE):
                 train(train_set_x, train_set_y, mask_train)
-                cost_val = compute_cost(valid_set_x, valid_set_y, mask_valid)
-                print("Epoch {} validation cost = {}".format(epoch + 1, cost_val))
+            cost_val = compute_cost(valid_set_x, valid_set_y, mask_valid)
+            print("Epoch {} validation cost = {}".format(epoch + 1, cost_val))
 
     def predict(self, X):
         mask_predict = np.ones((X.shape[0], X.shape[2]))
