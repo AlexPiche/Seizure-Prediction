@@ -184,7 +184,7 @@ def find_k_best_methods(k,patient_train,clf,flatten ,enhance_size,subtract_mean,
 
 def train_predict_test(patient_train, patient_test, clf,
 	flatten = True,enhance_size = 0,subtract_mean = False,
-	                   best_methods = 0, probability = True,folds =2, cnn=False):
+	                   best_methods = 5, probability = True,folds =2, cnn=False):
 
 	""" loop over all preprocessing methods for a given patient
 		enhance data by given size
