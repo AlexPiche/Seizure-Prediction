@@ -39,13 +39,13 @@ def read(filename):
     return jsdict(obj)
 
 pib_spec_ents = [
-'0.25-1-1.75-2.5-3.25-4-5-8.5-12-15.5-19.5-24',
-'0.25-2-3.5-6-15-24',
-'0.25-2-3.5-6-15',
-'0.25-2-3.5',
-'6-15-24',
-'2-3.5-6',
-'3.5-6-15'
+    '0.25-1-1.75-2.5-3.25-4-5-8.5-12-15.5-19.5-24',
+    '0.25-2-3.5-6-15-24',
+    '0.25-2-3.5-6-15',
+    '0.25-2-3.5',
+    '6-15-24',
+    '2-3.5-6',
+    '3.5-6-15'
 ]
 
 keys = ['corr','freq-corr-1-None','fft_mag_fbin-mean','hfd-2','hurst','pfd']
@@ -63,10 +63,10 @@ def load_subject_data(subject,test = False):
         if not test:
             preictal_file   = read('./preprocessed/' +subject+'/' + subject + '_preictal_pp_w-75s_' + curkey + '.hdf5')
             interictal_file = read('./preprocessed/'+subject+'/' + subject  +  '_interictal_pp_w-75s_'+ curkey + '.hdf5')
-        
+            
             preictal        = preictal_file['X']
             interictal      = interictal_file['X']
-    
+            
             subject_dict[key] = (interictal,preictal)
         else:
 
@@ -74,17 +74,17 @@ def load_subject_data(subject,test = False):
 
             t = test_file['X']
             subject_dict[key] = t
-    
+            
     for i in range(0,len(pib_spec_ents)):
         cur_setup = pib_spec_ents[i]
 
         if not test:
             preictal_file   = read('./preprocessed/' +subject+'/' + subject + '_preictal_pp_w-75s_' + prefix+cur_setup + '.hdf5')
             interictal_file = read('./preprocessed/'+subject+'/' + subject  +  '_interictal_pp_w-75s_'+ prefix+cur_setup+ '.hdf5')
-        
+            
             preictal        = preictal_file['X']
             interictal      = interictal_file['X']
-    
+            
             subject_dict[prefix+str(i)] = (interictal,preictal)
         else:
             test_file   = read('./preprocessed/' +subject+'/' + subject + '_test_pp_w-75s_' + prefix+cur_setup + '.hdf5')
@@ -112,8 +112,8 @@ def load_subject_data_cnn(subject,test = False):
             d = loadmat(f)
             x = d['data']
             t.append(x)
-        t = np.array(t)
-        subject_dict['cnn'] = t
+            t = np.array(t)
+            subject_dict['cnn'] = t
     else:
         preictal = []
         interictal = []
@@ -126,10 +126,10 @@ def load_subject_data_cnn(subject,test = False):
                 interictal.append(x)
             elif 'preictal' in f:
                 preictal.append(x)
-        preictal = np.array(preictal)
-        interictal = np.array(interictal)
-        subject_dict['cnn'] = (interictal,preictal)
-        
+                preictal = np.array(preictal)
+                interictal = np.array(interictal)
+                subject_dict['cnn'] = (interictal,preictal)
+                
     return subject_dict
 def load_subjects(subject_list,test = False,cnn = False):
     all_subjects = {}
