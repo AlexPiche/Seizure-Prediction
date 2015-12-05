@@ -71,7 +71,7 @@ for model in models:
 
                 "set best methods to be the number of preprocessing methods you want to use."
                 methods,scores,predictions = train_predict_test(patient_data,patient_data_test, RNN(flavour=models[model][0], N_HIDDEN=models[model][1], NUM_EPOCHS=models[model][2],patient=patient),
-                                                                flatten = False, enhance_size = 500, subtract_mean = False,best_methods=0,probability=False,cnn=False)
+                                                                flatten = False, enhance_size = 500, subtract_mean = False,best_methods=0,probability=True,cnn=False)
 
                 best_methods.extend(methods)
                 best_scores.extend(scores)
