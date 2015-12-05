@@ -100,7 +100,7 @@ class RNN:
 
         return rnn
 
-    def fit(self, X, y, key, EPOCH_SIZE=10, max_patience = 5):
+    def fit(self, X, y, key, EPOCH_SIZE=25, max_patience = 5):
         with open(file_title, "a") as myfile:
                     myfile.write('\n')
                     myfile.write(str(key))
@@ -143,7 +143,7 @@ class RNN:
                 lasagne.layers.set_all_param_values(self.rnn['out'], best_model)
                 break
 
-    def predict(self, X):
+    def predict_proba(self, X):
         mask_predict = np.ones((X.shape[0], X.shape[2]))
         predict = theano.function(
                 inputs=[self.rnn['input'].input_var, self.rnn['mask'].input_var],
