@@ -44,10 +44,10 @@ test_cor = pat1_dict_test['corr']
 all_predictions = []
 best_methods = []
 best_scores = []
-models = {'lstm1':['lstm',10,2], 'lstm2':['lstm',50,2],
-          'lstm3':['lstm',100,2],'lstm4':['lstm',150,2],'gru1':['gru',10,2],
-          'gru2':['gru',50,2],'gru3':['gru',100,2], 'gru4':['gru',150,15],
-          'vanilla1':['vanilla',10,2],'vanilla2':['vanilla',50,2],'vanilla3':['vanilla',100,2], 'vanilla4':['vanilla',150,2]}
+models = {'lstm1':['lstm',10,150], 'lstm2':['lstm',50,150],
+          'lstm3':['lstm',100,150],'lstm4':['lstm',150,150],'gru1':['gru',10,150],
+          'gru2':['gru',50,150],'gru3':['gru',100,150], 'gru4':['gru',150,150],
+          'vanilla1':['vanilla',10,150],'vanilla2':['vanilla',50,150],'vanilla3':['vanilla',100,150], 'vanilla4':['vanilla',150,150]}
 
 for model in models:
         for patient in all_patients:
