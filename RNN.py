@@ -1,88 +1,154 @@
-import lasagne
-from lasagne.layers import *
-from lasagne.layers.recurrent import *
-from lasagne.nonlinearities import tanh
-from lasagne.updates import adam
-from lasagne.layers import get_all_params
-from lasagne.updates import nesterov_momentum
-from sklearn.utils import shuffle
 import theano
-
-
-from nolearn.lasagne import NeuralNet
-
-
+import os
+from sklearn.cross_validation import train_test_split
+import theano.tensor as T
+import lasagne
 import numpy as np
 
-def float32(k):
-        return np.cast['float32'](k)
+target_values = T.vector('target_output')
+mask = T.matrix('mask')
 
-def formatData(X, y = None):
-        #X -= X.mean()
-        #X /= X.std()
-        X = X.reshape(X.shape[0],1,X.shape[1],X.shape[2])
-        X = X.astype(np.float32)
-        if y is not None:
-            y = y.astype(np.int32)
-        return X,y
-
+# Recurrent Networks
 
 class RNN:
-    def __init__(self):
-        self.convnet = None
+    def __init__(self, flavour='lstm', N_HIDDEN=50, NUM_EPOCHS=10, patient=None):
+        self.rnn = None
+        self.__N_HIDDEN = N_HIDDEN
+        self.__flavour = flavour
+        self.__NUM_EPOCHS = NUM_EPOCHS
+        global file_title
+        file_title = "analysis/" + str(flavour) + str(N_HIDDEN) + str(patient) + '.csv'
+    def make_rnn(self, X, y, operation = T.add, peepholes=True):
+        """
+        Build a RNN
 
-    def make_rnn(self,X,y):
-        FSIZE = (int(np.floor(X.shape[2]/4)), int(np.floor(X.shape[3]/4)))
+        flavour can be 'lstm', 'gru', or vanilla
+        operation can be T.add, T.mul, T.minimum, or T.maximum
+        """
+        N_HIDDEN = self.__N_HIDDEN
+        flavour = self.__flavour
 
-        recnet = NeuralNet(
-            layers = [
-                ('input', InputLayer ),
 
-                ('lstm_forward', LSTMLayer),
-                ('lstm_backward', LSTMLayer),
+        print "Building the Model"
+        rnn = {}
+        rnn['input'] = lasagne.layers.InputLayer(shape=(None, None, X.shape[2]))
 
-                ('concat', ConcatLayer),
+        rnn['mask'] = lasagne.layers.InputLayer(shape=(None, None))
 
-                ('lstm_sum', ElementwiseSumLayer),
+        gate_parameters = lasagne.layers.recurrent.Gate(
+            W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
+            b=lasagne.init.Constant(0.))
 
-                (Reshape),
+        cell_parameters = lasagne.layers.recurrent.Gate(
+            W_in=lasagne.init.Orthogonal(), W_hid=lasagne.init.Orthogonal(),
+            W_cell=None, b=lasagne.init.Constant(0.),
+            nonlinearity=lasagne.nonlinearities.tanh)
 
-                (DenseLayer, {'num_units': 1, 'nonlinearity': tanh}),
-            ],
+        rnn['noise'] = lasagne.layers.GaussianNoiseLayer(rnn['input'], sigma=0.1)
 
-            input_shape= (None, 1, X.shape[2], X.shape[3]),
+        # Bidirectional RNN
+        # which kind of gate
 
-            conv1_num_filters = NUM_FILTERS1,
-            conv1_filter_size = FSIZE , 
-            conv1_pad =  1,
+        if flavour == 'lstm' :
+            print "Initializing LSTM"
+            rnn['rnn_forward'] = lasagne.layers.recurrent.LSTMLayer(
+                rnn['noise'], N_HIDDEN, mask_input=rnn['mask'],
+                ingate=gate_parameters, forgetgate=gate_parameters,
+                cell=cell_parameters, outgate=gate_parameters,
+                learn_init=True, grad_clipping=100.,
+                peepholes=peepholes)
 
-            conv2_num_filters = NUM_FILTERS2,
-            conv2_filter_size = FSIZE , 
-            conv2_pad =  1,
+            rnn['rnn_backward'] = lasagne.layers.recurrent.LSTMLayer(
+                rnn['noise'], N_HIDDEN, ingate=gate_parameters,
+                mask_input=rnn['mask'], forgetgate=gate_parameters,
+                cell=cell_parameters, outgate=gate_parameters,
+                learn_init=True, grad_clipping=100., backwards=True,
+                peepholes=peepholes)
 
-            lstm_forward_incoming = 'input',
-            lstm_backward_incoming = 'input',
-            concat_incomings = ['lstm_forward', 'lstm_backward'],
-            lstm_sum_incoming = 'concat',
+        elif flavour == 'gru' :
+            print "Initializing GRU"
+            rnn['rnn_forward'] = lasagne.layers.recurrent.GRULayer(
+            rnn['noise'], N_HIDDEN, mask_input=rnn['mask'],
+            resetgate=gate_parameters , updategate=gate_parameters,
+                learn_init=True, grad_clipping=100.)
 
-            update_learning_rate=theano.shared(float32(0.01)),
-            update_momentum=theano.shared(float32(0.9)),
-            verbose=2,
-            max_epochs = 50,
+            rnn['rnn_backward'] = lasagne.layers.recurrent.GRULayer(
+            rnn['noise'], N_HIDDEN, mask_input=rnn['mask'],
+            learn_init=True, grad_clipping=100., backwards=True)
 
-            )
-        return recnet
+        else:
+            print "Initializing Recurrent Layer"
+            rnn['rnn_forward'] = lasagne.layers.RecurrentLayer(rnn['noise'],
+            N_HIDDEN, mask_input=rnn['mask'],
+            nonlinearity = lasagne.nonlinearities.tanh,
+            learn_init=True, grad_clipping=100., backwards=False)
 
-    def fit(self,X,y):
-        X,y = formatData(X,y)
-        print X.shape
-        self.recnet = self.make_rnn(X,y)
-        self.recnet.fit(X,y)
+            rnn['rnn_backward'] = lasagne.layers.RecurrentLayer(rnn['noise'],
+            N_HIDDEN, mask_input=rnn['mask'],
+            nonlinearity = lasagne.nonlinearities.tanh,
+            learn_init=True, grad_clipping=100., backwards=True)
 
-    def predict_proba(self,X):
-        X,_ = formatData(X)
-        return self.recnet.predict_proba(X)
+        rnn['sum'] = lasagne.layers.ElemwiseMergeLayer([rnn['rnn_forward'], rnn['rnn_backward']], operation)
 
-    def predict(self,X):
-        X,_ = formatData(X)
-        return self.recnet.predict(X)
+        n_batch, n_time_steps, n_features = rnn['input'].input_var.shape
+        rnn['reshape'] = lasagne.layers.ReshapeLayer(rnn['sum'], (-1, N_HIDDEN))
+        rnn['dense'] = lasagne.layers.DenseLayer(
+            rnn['reshape'], num_units=1, nonlinearity=lasagne.nonlinearities.tanh)
+
+        # TODO ain't it suppose to be softmax for the last layer??
+        rnn['out'] = lasagne.layers.ReshapeLayer(rnn['dense'], (n_batch, n_time_steps))
+
+        return rnn
+
+    def fit(self, X, y, key, EPOCH_SIZE=25, max_patience = 5):
+        with open(file_title, "a") as myfile:
+                    myfile.write('\n')
+                    myfile.write(str(key))
+        NUM_EPOCHS=self.__NUM_EPOCHS
+        self.rnn = self.make_rnn(X, y)
+        # initiate best loss value to 0 correct prediction
+        best_val = 1000
+        #initialize patience to 0
+        patience = 0
+        train_set_x, valid_set_x, train_set_y, valid_set_y = train_test_split(X, y, test_size=0.1, random_state=42)
+        network_output = lasagne.layers.get_output(self.rnn['out'])
+        predicted_values = network_output[:, -1]
+        #cost = lasagne.objectives.categorical_crossentropy(predicted_values, target_values)
+        cost = T.mean((predicted_values - target_values)**2)
+        all_params = lasagne.layers.get_all_params(self.rnn['out'])
+        updates = lasagne.updates.adam(cost, all_params)
+        train = theano.function(
+            [self.rnn['input'].input_var, target_values, self.rnn['mask'].input_var],
+            cost, updates=updates)
+        compute_cost = theano.function(
+            [self.rnn['input'].input_var, target_values, self.rnn['mask'].input_var],
+            cost)
+        mask_train = np.ones((train_set_x.shape[0], train_set_x.shape[2]))
+        mask_valid = np.ones((valid_set_x.shape[0], valid_set_x.shape[2]))
+        print("Beginning training")
+        for epoch in range(NUM_EPOCHS):
+            for _ in range(EPOCH_SIZE):
+                train(train_set_x, train_set_y, mask_train)
+            cost_val = compute_cost(valid_set_x, valid_set_y, mask_valid)
+            with open(file_title, "a") as myfile:
+                    myfile.write(','+str(cost_val))
+            print("Epoch {} validation cost = {}".format(epoch + 1, cost_val))
+            if cost_val < best_val:
+                patience = 0
+                best_val = cost_val
+                best_model = lasagne.layers.get_all_param_values(self.rnn['out'])
+            else:
+                patience += 1
+            if patience > max_patience:
+                lasagne.layers.set_all_param_values(self.rnn['out'], best_model)
+                break
+
+    def predict_proba(self, X):
+        mask_predict = np.ones((X.shape[0], X.shape[2]))
+        predict = theano.function(
+                inputs=[self.rnn['input'].input_var, self.rnn['mask'].input_var],
+                outputs= lasagne.layers.get_output(self.rnn['out']))
+        prediction = predict(X, mask_predict)
+        print prediction[:, -1]
+        return prediction[:, -1]
+

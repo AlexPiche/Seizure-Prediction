@@ -8,16 +8,18 @@ from Utilities import make_csv_predictions,train_predict_test,find_k_best_method
 import numpy as np
 
 from CNN import CNN
+from RNN import RNN
 
+print("Getting the data")
 all_patients = ['Dog_1','Dog_2','Dog_3','Dog_4','Dog_5','Patient_1','Patient_2']
 
 """ you can load all the subjects you want by putting them in a list
 	the return value is a dictionary with the subjects as keys """
 all_subjects_dict = load_subjects(all_patients)
-all_subjects_dict_cnn = load_subjects(all_patients,cnn =True)
+#all_subjects_dict_cnn = load_subjects(all_patients,cnn =True)
 
 all_subjects_dict_test = load_subjects(all_patients,test=True)
-all_subjects_dict_test_cnn = load_subjects(all_patients,test=True,cnn=True)
+#all_subjects_dict_test_cnn = load_subjects(all_patients,test=True,cnn=True)
 
 """ pat dict is a dictionary that has the different preprocessing techniques as its keys """
 pat1_dict = all_subjects_dict['Patient_1']
@@ -43,12 +45,12 @@ best_methods = []
 best_scores = []
 for patient in all_patients:
 
-	patient_data = all_subjects_dict_cnn[patient]
-	patient_data_test = all_subjects_dict_test_cnn[patient]
+	patient_data = all_subjects_dict[patient]
+	patient_data_test = all_subjects_dict_test[patient]
 
 	"set best methods to be the number of preprocessing methods you want to use."
-	methods,scores,predictions = train_predict_test(patient_data,patient_data_test,CNN(),
-		flatten = False, enhance_size = 500, subtract_mean = True,best_methods=0,probability=True,cnn=False)
+	methods,scores,predictions = train_predict_test(patient_data,patient_data_test, RNN(),
+		                                            flatten = False, enhance_size = 500, subtract_mean = True,best_methods=0,probability=False,cnn=False)
 	
 
 	best_methods.extend(methods)
