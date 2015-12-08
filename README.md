@@ -35,6 +35,7 @@
 
 * https://github.com/craffel/Lasagne-tutorial
 * http://www.wildml.com/2015/09/recurrent-neural-networks-tutorial-part-1-introduction-to-rnns/
+* https://gist.github.com/justiceamoh/abe5efeff1fa8277febb
 
 ## DBN
 
