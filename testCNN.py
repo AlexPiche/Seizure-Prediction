@@ -57,14 +57,14 @@ for patient in all_patients:
 	x_test = load_test_data('preprocessed/cnn/', patient)['x']
 
 	test_preds,test_preds_ns,val_preds, val_true,train_loss,valid_loss= train_predict_test_cnn(
-		patient,CNN(),x,x_test,enhance_size = 100)
+		patient,CNN(patient),x,x_test,enhance_size = 1000)
 
 	roc_area = roc_auc_score(val_true,val_preds)
 	print patient, roc_area
 
-	#plot = plt.figure()
-	#plot_train_val_loss(train_loss,valid_loss,patient)
-	#plot.savefig('./figs/CNN'+patient+'train_val.png')
+	plot = plt.figure()
+	plot_train_val_loss(train_loss,valid_loss,patient)
+	plot.savefig('./figs/CNN'+patient+'train_val.png')
 
 	
 	all_predictions.append(test_preds)

@@ -12,7 +12,8 @@ from utils.data_splitter import split_train_valid_filenames, generate_overlapped
 
 from sklearn.base import clone
 
-def enhance_data(data_x,data_y,reference_size,cnn=False):
+from CNN import CNN
+def enhance_data(data_x,data_y,reference_size,cnn=False,even = False):
 	"""  add gaussian noise """
 	data_temp = data_x
 	#print "var", np.var(data_x)
@@ -23,18 +24,26 @@ def enhance_data(data_x,data_y,reference_size,cnn=False):
 	interictal_indices = data_y ==0
 	data_p = data_temp[preictal_indices]
 	data_i  = data_temp[interictal_indices]
+	var_p = np.var(data_p)
+	var_i = np.var(data_i)
 	#print data_p.shape
 	while i < reference_size:
-		rand = np.random.randint(0,data_p.shape[0])
-		example = data_p[rand]
-		example_y = 1
-		#var = np.var(data_p)
-		if i % 2 == 1:
-			rand = np.random.randint(0,data_i.shape[0])
-			example = data_i[rand]
-			example_y = 0
-		#	var = np.var(data_i)
-		#print example.shape
+		rand = np.random.randint(0,data_x.shape[0])
+		example = data_x[rand]
+		example_y = data_y[rand]
+		var = var_i
+		if example_y == 1:
+			var = var_p
+		if even:
+			rand = np.random.randint(0,data_p.shape[0])
+			example = data_p[rand]
+			example_y = 1
+			var = var_p
+			if i % 2 == 1:
+				rand = np.random.randint(0,data_i.shape[0])
+				example = data_i[rand]
+				example_y = 0
+				var = var_i
 
 		noise = np.random.normal(0,1,example.shape)
 		new_example = example +noise
@@ -182,13 +191,9 @@ def split_evenly(X,y,test_size = .25):
 
 	num_p = X_p.shape[0] * .25
 	test_size_i =  num_p / X_i.shape[0]
-	X_p_train, X_p_test,y_p_train,y_p_test = train_test_split(X_p,y_p,test_size=.25)#,random_state = 33)
-	X_i_train, X_i_test,y_i_train,y_i_test = train_test_split(X_i,y_i,test_size=test_size_i)#,random_state = 33)
+	X_p_train, X_p_test,y_p_train,y_p_test = train_test_split(X_p,y_p,test_size=.25,random_state = 33)
+	X_i_train, X_i_test,y_i_train,y_i_test = train_test_split(X_i,y_i,test_size=test_size_i,random_state = 39)
 
-	#print "preictal train, preictal test sizes"
-	#print X_p_train.shape,X_p_test.shape
-	#print "interictal train, interictal test sizes"
-	#print X_i_train.shape,X_i_test.shape
 	X = np.vstack((X_p_train,X_i_train))
 	Xt = np.vstack((X_p_test,X_i_test))
 
@@ -203,6 +208,7 @@ def train_predict_test_cnn(subject,clf,X,X_test,enhance_size = 0):
 	filenames_grouped_by_hour = cPickle.load(open('filenames.pickle'))
 	data_grouped_by_hour = load_grouped_train_data('preprocessed/cnn/', subject, filenames_grouped_by_hour)
 
+	
 	X, y = generate_overlapped_data(data_grouped_by_hour, overlap_size=10,
 	                                window_size=X.shape[-1],
 	                                overlap_interictal=True,
@@ -212,10 +218,12 @@ def train_predict_test_cnn(subject,clf,X,X_test,enhance_size = 0):
 
 	X_test, _ = scale_across_time(X_test, x_test=None, scalers=scalers)
 
-	X,xt,y,yt = split_evenly(X,y,test_size = .25)	
+
+	X,xt,y,yt = split_evenly(X,y,test_size = .25)
+	#X,xt,y,yt = train_test_split(X,y,test_size = .25)		
 	if enhance_size > 0:
-		X,y = enhance_data(X,y,enhance_size,cnn=True)
-		xt,yt = enhance_data(xt,yt,enhance_size/2,cnn=True)
+		X,y = enhance_data(X,y,enhance_size,cnn=True,even=True)
+		xt,yt = enhance_data(xt,yt,enhance_size,cnn=True,even=True)
 
 	print "train size", X.shape
 	print "test_size", xt.shape
@@ -223,14 +231,42 @@ def train_predict_test_cnn(subject,clf,X,X_test,enhance_size = 0):
 	#print "done loading"
 	clf.fit(X,y,xt,yt)
 
-	train_loss = np.array([])
-	valid_loss = np.array([])
-	#train_loss = np.array([i["train_loss"] for i in clf.convnet.train_history_])
-	#valid_loss = np.array([i["valid_loss"] for i in clf.convnet.train_history_])
+	#train_loss = np.array([])
+	#valid_loss = np.array([])
+	
 
 	#print "train,valid size",train_loss.shape,valid_loss.shape
 	#print "done fitting"
 	preds_proba = clf.predict_proba(X_test)[:,1]
+
+	# unsup_size = int(X_test.shape[0]/5)
+	# top_ind = np.argpartition(preds_proba,-unsup_size)[-unsup_size:]
+	# bot_ind = preds_proba.argsort()[:unsup_size]
+	# x_new_p = X_test[top_ind]
+	# x_new_i = X_test[bot_ind]
+	# y_p = np.ones(x_new_p.shape[0])
+	# y_i = np.zeros(x_new_i.shape[0])
+
+	#print y_p.shape,y_i.shape
+	#print x_new_p.shape, x_new_i.shape
+	# x_new = np.vstack((x_new_p,x_new_i))
+	# y_new = np.append(y_p,y_i)
+	# #print x_new.shape,y_new.shape
+	# #X,xt,y,yt = split_evenly(x_new,y_new,test_size = .25)	
+	# if enhance_size > 0:
+	# 	x_new,y_new = enhance_data(x_new,y_new,enhance_size,cnn=True)
+		
+
+	# print "train size", X.shape
+	# print "test_size", xt.shape
+
+	# #print "done loading"
+	# clf2 = CNN(subject)
+	# clf2.fit(x_new,y_new,xt,yt)
+
+	# preds_proba = clf2.predict_proba(X_test)[:,1]
+	train_loss = np.array([i["train_loss"] for i in clf.convnet.train_history_])
+	valid_loss = np.array([i["valid_loss"] for i in clf.convnet.train_history_])
 	#preds_proba = set_median_to_half(preds_proba)[:,1]
 	preds_scaled = min_max_scale(preds_proba)
 	#print preds_proba.shape
