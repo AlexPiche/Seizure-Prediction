@@ -32,6 +32,12 @@ https://www.sharelatex.com/project/5650c66739c542e95bab4fd9
 
 ## RNN 
 
+### 
+
+* python testRNN.py
+  * can modify the type of architecture if you import RNN from RNN2layers or RNN3layers
+  * can modify the number of hidden units in the files RNN2layers and RNN3layers.
+
 ### Tutorial
 
 * https://github.com/craffel/Lasagne-tutorial
