@@ -190,9 +190,9 @@ class RNN:
         return rnn
 
     def fit(self, X, y, valid_set_x, valid_set_y, key=0, EPOCH_SIZE=1, max_patience=15):
-        with open(file_title, "a") as myfile:
-                    myfile.write('\n')
-                    myfile.write(str(key))
+        #with open(file_title, "a") as myfile:
+        #            myfile.write('\n')
+        #            myfile.write(str(key))
         NUM_EPOCHS=self.__NUM_EPOCHS
         self.rnn = self.make_rnn(X, y)
         # initiate best loss value to 0 correct prediction
@@ -228,8 +228,8 @@ class RNN:
             #acc_val = compute_acc(valid_set_x, valid_set_y, mask_valid)
             yhat = self.predict_proba(valid_set_x)
             acc_val = sklearn.metrics.roc_auc_score(valid_set_y, yhat)
-            with open(file_title, "a") as myfile:
-                    myfile.write(','+str(acc_val))
+            #with open(file_title, "a") as myfile:
+            #        myfile.write(','+str(acc_val))
             if acc_val > best_val:
                 patience = 1
                 best_val = acc_val
