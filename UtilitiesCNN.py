@@ -274,7 +274,41 @@ def train_predict_test_cnn(subject,clf,X,X_test,enhance_size = 0):
 
 	return preds_scaled,preds_proba,list(validation_preds),list(yt),train_loss,valid_loss
 
+def train_predict_test(subject,clf,X,X_test,enhance_size = 0):
 
+	filenames_grouped_by_hour = cPickle.load(open('filenames.pickle'))
+	data_grouped_by_hour = load_grouped_train_data('preprocessed/cnn/', subject, filenames_grouped_by_hour)
+
+	
+	X, y = generate_overlapped_data(data_grouped_by_hour, overlap_size=10,
+	                                window_size=X.shape[-1],
+	                                overlap_interictal=True,
+	                                overlap_preictal=True)
+
+	X, scalers = scale_across_time(X, x_test=None)
+
+	X_test, _ = scale_across_time(X_test, x_test=None, scalers=scalers)
+
+
+	print X.shape
+	X = X.reshape(X.shape[0],X.shape[1]*X.shape[2]*X.shape[3])
+	X_test = X_test.reshape(X_test.shape[0],X_test.shape[1]*X_test.shape[2]*X_test.shape[3])
+	X,xt,y,yt = train_test_split(X,y,test_size = .25)		
+	
+
+	print "train size", X.shape
+	print "test_size", xt.shape
+
+	#print "done loading"
+	clf.fit(X)
+
+	preds_proba = clf.predict(X_test)
+
+	
+	#print preds_proba.shape
+	validation_preds = clf.predict(xt)
+
+	return preds_proba,list(validation_preds),list(yt)
 
 
 	
